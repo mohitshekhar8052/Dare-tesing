@@ -33,7 +33,7 @@ export default function LeaderboardPage() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardUser[]>(initialData)
   const currentUserId = 5 // Mock current user
 
-  // Shuffle and update scores every 3 seconds
+  // Shuffle and update scores every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setLeaderboardData((prevData) => {
@@ -46,7 +46,7 @@ export default function LeaderboardPage() {
         // Sort by score descending
         return newData.sort((a, b) => b.score - a.score)
       })
-    }, 3000)
+    }, 30000)
 
     return () => clearInterval(interval)
   }, [])

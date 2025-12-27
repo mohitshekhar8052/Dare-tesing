@@ -1,6 +1,6 @@
 import '../styles/globals.css'
 import { ReactNode } from 'react'
-import { BottomNav } from '@/components/BottomNav'
+import { ConditionalNav } from '@/components/ConditionalNav'
 
 export const metadata = {
   title: 'Dare',
@@ -12,7 +12,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         {children}
-        <BottomNav />
+        <ConditionalNav />
       </body>
     </html>
   )
