@@ -144,7 +144,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-pastel-lavender/30 to-white flex overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white via-pastel-lavender/30 to-white flex overflow-hidden pt-20 lg:pt-0">
       {/* Back to Home Button */}
       <button
         onClick={() => router.push('/')}
@@ -164,7 +164,7 @@ export default function AuthPage() {
       </div>
 
       {/* Left Side - Branding & Features */}
-      <div className="hidden lg:flex lg:w-1/2 relative z-10 p-12 flex-col justify-between">
+      <div className="hidden lg:flex lg:w-1/2 relative z-10 p-12 pt-24 flex-col justify-between">
         {/* Logo & Tagline */}
         <div>
           <div className="flex items-center gap-3 mb-6">
@@ -359,6 +359,7 @@ export default function AuthPage() {
                           <option value="Symbiosis International University, Pune" />
                           <option value="Jadavpur University, Kolkata" />
                           <option value="Anna University, Chennai" />
+                          <option value="Madan Mohan Malaviya University OF Technology, Gorakhpur" />
                         </datalist>
                       </div>
                     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Zap, Trophy, User, Flame } from "lucide-react"
+import GlassSurface from "./GlassSurface"
 
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
@@ -17,21 +18,20 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe pointer-events-none">
-      {/* Liquid Glass Container */}
       <div className="mx-auto mb-3 max-w-md px-4 pointer-events-auto">
-        {/* Glass background with blur */}
-        <div className="relative backdrop-blur-xl bg-white/60 border border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)] rounded-[28px] overflow-hidden">
-          {/* Animated gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-pastel-coral/5 opacity-60" />
-          
-          {/* Shimmer effect */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-transparent opacity-40 pointer-events-none" />
-          
-          {/* Glow effect on active */}
-          <div className="absolute inset-0 opacity-0 animate-pulse bg-gradient-to-r from-primary/10 to-secondary/10 blur-xl" />
-          
-          {/* Nav items container */}
-          <div className="relative flex items-center justify-around gap-1 px-3 py-2.5">
+        <GlassSurface
+          width="100%"
+          height="auto"
+          borderRadius={28}
+          brightness={95}
+          opacity={0.7}
+          blur={12}
+          displace={2}
+          backgroundOpacity={0.3}
+          saturation={1.2}
+          className="shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]"
+        >
+          <div className="relative w-full flex items-center justify-around gap-1 px-3 py-2.5">
             {navItems.map((item) => {
               const isActive = pathname === item.href
               const Icon = item.icon
@@ -84,13 +84,7 @@ export function BottomNav() {
               )
             })}
           </div>
-          
-          {/* Top shine line */}
-          <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/60 to-transparent" />
-          
-          {/* Bottom reflection */}
-          <div className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-        </div>
+        </GlassSurface>
         
         {/* Shadow blob underneath */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-3/4 h-8 bg-primary/10 blur-2xl rounded-full -z-10" />

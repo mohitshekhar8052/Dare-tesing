@@ -179,13 +179,16 @@ export default function Home() {
               </Button>
             </Link>
           ) : (
-            <Link href="/auth">
-              <Button variant="hero" size="xl" className="group animate-pulse-slow">
-                <Zap className="w-5 h-5 group-hover:animate-bounce" />
-                Sign In to Get Started
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
+            <div className="relative inline-flex">
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-pastel-coral rounded-full blur-lg opacity-75 animate-pulse" />
+              <Link href="/auth" className="relative z-10">
+                <button className="inline-flex items-center gap-3 px-8 py-4 text-lg font-extrabold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-primary/90 hover:via-secondary/90 hover:to-primary/90 rounded-full shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 border-2 border-white/20 hover:border-white/40">
+                  <Zap className="w-5 h-5" />
+                  Sign In to Get Started
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </Link>
+            </div>
           )}
 
           {/* Features Grid */}
@@ -483,14 +486,11 @@ export default function Home() {
                 <Button 
                   variant="hero" 
                   size="xl" 
-                  className="group relative overflow-hidden text-lg px-12 py-6 animate-pulse-slow"
+                  className="group flex items-center gap-3 text-lg px-12 py-6"
                 >
-                  <span className="relative z-10 flex items-center gap-3">
-                    <Zap className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                    Accept the Challenge
-                    <Flame className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] animate-gradient-flow" />
+                  <Zap className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+                  Accept the Challenge
+                  <Flame className="w-6 h-6 group-hover:rotate-12 transition-transform" />
                 </Button>
               </div>
 
