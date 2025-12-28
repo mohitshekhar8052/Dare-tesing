@@ -15,7 +15,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-white/20 shadow-[0_4px_24px_rgba(0,0,0,0.06)]">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-200/50 shadow-[0_4px_24px_rgba(0,0,0,0.06)]" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -62,7 +62,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden backdrop-blur-xl bg-white/95 border-t border-white/20">
+        <div className="md:hidden backdrop-blur-xl bg-white/95 border-t border-slate-200/50" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
           <div className="px-4 pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <NavLink
