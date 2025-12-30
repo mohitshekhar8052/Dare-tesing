@@ -28,6 +28,7 @@ import {
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
+  const [timeRemaining, setTimeRemaining] = useState({ hours: 0, minutes: 0, seconds: 0 })
   
   // Scroll animation hooks for different sections
   const loginSection = useScrollAnimation({ threshold: 0.2 })
@@ -41,6 +42,33 @@ export default function Home() {
     })
 
     return () => unsubscribe()
+  }, [])
+
+  // Countdown timer effect
+  useEffect(() => {
+    const calculateTimeRemaining = () => {
+      // Set target to midnight (end of day)
+      const now = new Date()
+      const tomorrow = new Date(now)
+      tomorrow.setHours(24, 0, 0, 0)
+      
+      const diff = tomorrow.getTime() - now.getTime()
+      
+      if (diff > 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+        
+        setTimeRemaining({ hours, minutes, seconds })
+      } else {
+        setTimeRemaining({ hours: 0, minutes: 0, seconds: 0 })
+      }
+    }
+
+    calculateTimeRemaining()
+    const interval = setInterval(calculateTimeRemaining, 1000)
+
+    return () => clearInterval(interval)
   }, [])
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white overflow-x-hidden pb-24">
@@ -98,17 +126,17 @@ export default function Home() {
                     </Button>
                   </Link>
                 ) : (
-                  <Link href="/auth">
-                    <Button variant="hero" size="xl" className="group w-full sm:w-auto">
-                      <Zap className="w-4 h-4 group-hover:animate-bounce" />
-                      Start Your Journey
-                    </Button>
-                  </Link>
+                  <div className="relative inline-flex w-full sm:w-auto">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-primary via-secondary to-pastel-coral rounded-xl blur opacity-75 group-hover:opacity-100 animate-pulse" />
+                    <Link href="/auth" className="relative w-full">
+                      <button className="relative inline-flex items-center justify-center gap-2 px-6 py-3 w-full sm:w-auto text-base font-bold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-primary/90 hover:via-secondary/90 hover:to-primary/90 rounded-xl shadow-lg hover:shadow-primary/50 transition-all duration-300 hover:scale-105 border border-white/20">
+                        <Zap className="w-4 h-4 group-hover:animate-bounce" />
+                        Start Your Journey
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </Link>
+                  </div>
                 )}
-                <Button variant="outline" size="lg">
-                  <Trophy className="w-4 h-4" />
-                  View Leaderboard
-                </Button>
               </div>
 
               {/* Stats */}
@@ -554,7 +582,9 @@ export default function Home() {
               <div className="mt-8 text-center">
                 <p className="text-sm text-muted-foreground mb-2">Expires in:</p>
                 <div className="flex items-center justify-center gap-2 font-display text-2xl font-bold text-primary animate-pulse">
-                  <span>18</span>:<span>32</span>:<span>45</span>
+                  <span>{String(timeRemaining.hours).padStart(2, '0')}</span>:
+                  <span>{String(timeRemaining.minutes).padStart(2, '0')}</span>:
+                  <span>{String(timeRemaining.seconds).padStart(2, '0')}</span>
                 </div>
               </div>
             </div>
