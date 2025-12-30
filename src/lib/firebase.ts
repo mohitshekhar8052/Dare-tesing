@@ -2,6 +2,7 @@ import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
 import { getAnalytics } from 'firebase/analytics'
 import { getAuth, Auth } from 'firebase/auth'
 import { getFirestore, Firestore } from 'firebase/firestore'
+import { getStorage, FirebaseStorage } from 'firebase/storage'
 
 const firebaseConfig = {
   apiKey: "AIzaSyABXx6NtGqqsj-CfSVddIsGDKj1rc6CrnA",
@@ -24,6 +25,7 @@ if (!getApps().length) {
 // Initialize services
 export const auth: Auth = getAuth(app)
 export const db: Firestore = getFirestore(app)
+export const storage: FirebaseStorage = getStorage(app)
 
 let analytics: any = null
 if (typeof window !== 'undefined') {

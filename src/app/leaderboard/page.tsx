@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import { Trophy, Medal, Flame, Coins, TrendingUp, Crown, Star, Zap } from "lucide-react"
 
 interface LeaderboardUser {
@@ -14,7 +15,21 @@ interface LeaderboardUser {
 }
 
 export default function LeaderboardPage() {
+  const { user, loading, hasProfile } = useAuth(true, true)
+
   const [timeframe, setTimeframe] = useState<"today" | "week" | "month" | "all">("week")
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!user || !hasProfile) {
+    return null
+  }
 
   // Mock data with Indian names
   const initialData: LeaderboardUser[] = [

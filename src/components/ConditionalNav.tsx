@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { BottomNav } from './BottomNav'
+import Navbar from './Navbar'
 
 export function ConditionalNav() {
   const pathname = usePathname()
@@ -22,5 +23,10 @@ export function ConditionalNav() {
     return <div className="h-20" /> // Placeholder to maintain layout
   }
   
-  return <BottomNav />
+  return (
+    <>
+      <Navbar />
+      <BottomNav />
+    </>
+  )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 import { auth, db } from "@/lib/firebase"
 import { signOut } from "firebase/auth"
 import { doc, getDoc } from "firebase/firestore"
@@ -30,8 +31,21 @@ import {
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { user: authUser, loading: authLoading, hasProfile } = useAuth(true, true)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!authUser || !hasProfile) {
+    return null
+  }
 
   // User data from Firebase
   const [profileData, setProfileData] = useState({

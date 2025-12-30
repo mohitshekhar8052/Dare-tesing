@@ -20,6 +20,7 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
     currentStep: number;
     onStepClick: (clicked: number) => void;
   }) => ReactNode;
+  validateStep?: (step: number) => boolean;
 }
 
 export default function Stepper({
@@ -37,6 +38,7 @@ export default function Stepper({
   nextButtonText = 'Continue',
   disableStepIndicators = false,
   renderStepIndicator,
+  validateStep,
   ...rest
 }: StepperProps) {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
@@ -72,9 +74,12 @@ export default function Stepper({
   };
 
   const handleComplete = () => {
-    console.log("Complete clicked, calling callback...")
+    console.log("Complete clicked, calling callback immediately...")
+    // Call the completion handler BEFORE updating step state
+    onFinalStepCompleted();
+    // Then update the visual state
     setDirection(1);
-    updateStep(totalSteps + 1);
+    setCurrentStep(totalSteps + 1);
   };
 
   return (
@@ -148,9 +153,21 @@ export default function Stepper({
                 </button>
               )}
               <button
-                onClick={isLastStep ? handleComplete : handleNext}
-                className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200"
                 {...nextButtonProps}
+                onClick={(e) => {
+                  console.log("Button clicked! isLastStep:", isLastStep, "currentStep:", currentStep, "validateStep result:", validateStep ? validateStep(currentStep) : "no validation");
+                  if (isLastStep) {
+                    handleComplete();
+                  } else {
+                    handleNext();
+                  }
+                  // Call original onClick if exists
+                  if (nextButtonProps?.onClick) {
+                    nextButtonProps.onClick(e);
+                  }
+                }}
+                disabled={validateStep && !validateStep(currentStep)}
+                className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {isLastStep ? 'Complete' : nextButtonText}
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

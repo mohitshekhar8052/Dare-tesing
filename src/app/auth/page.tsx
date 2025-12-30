@@ -8,7 +8,8 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   GoogleAuthProvider,
-  updateProfile
+  updateProfile,
+  onAuthStateChanged
 } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import { Flame, Mail, Lock, User, Eye, EyeOff, Zap, Trophy, Star, Crown, Target, Users, TrendingUp, Sparkles, ArrowRight, Check, ArrowLeft, Home, GraduationCap } from "lucide-react"
@@ -30,7 +31,34 @@ export default function AuthPage() {
   const [userName, setUserName] = useState("")
   const [userCollege, setUserCollege] = useState("")
   const [userBio, setUserBio] = useState("Dare enthusiast | Challenge seeker | Always up for an adventure 🔥")
+  const [isAuthChecking, setIsAuthChecking] = useState(true)
   const router = useRouter()
+
+  // Check if user is already authenticated and has profile
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid))
+          if (userDoc.exists()) {
+            // User is authenticated and has a profile, redirect to home
+            router.push("/")
+          } else {
+            // User is authenticated but doesn't have profile, show stepper
+            setUserId(currentUser.uid)
+            setUserEmail(currentUser.email || "")
+            setUserName(currentUser.displayName || "")
+            setShowStepper(true)
+          }
+        } catch (error) {
+          console.error("Error checking user profile:", error)
+        }
+      }
+      setIsAuthChecking(false)
+    })
+
+    return () => unsubscribe()
+  }, [router])
 
   const features = [
     {
@@ -121,28 +149,37 @@ export default function AuthPage() {
       const userCredential = await signInWithPopup(auth, provider)
       const user = userCredential.user
 
-      // Check if user document exists
-      try {
-        const userDoc = await getDoc(doc(db, "users", user.uid))
-        
-        // If new user, show stepper for additional info
-        if (!userDoc.exists()) {
-          setUserId(user.uid)
-          setUserEmail(user.email || "")
-          setUserName(user.displayName || "")
-          setShowStepper(true)
-          setLoading(false)
-        } else {
-          router.push("/")
+      // Quick check if user document exists with timeout
+      const checkUserProfile = async () => {
+        try {
+          const userDocRef = doc(db, "users", user.uid)
+          const userDoc = await Promise.race([
+            getDoc(userDocRef),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('timeout')), 3000)
+            )
+          ]) as any
+          
+          return userDoc.exists()
+        } catch (error) {
+          // If timeout or error, assume new user
+          console.log("Profile check timeout/error, treating as new user")
+          return false
         }
-      } catch (firestoreErr: any) {
-        // If offline or Firestore error, assume new user and show stepper
-        console.error("Firestore error:", firestoreErr)
+      }
+
+      const hasProfile = await checkUserProfile()
+      
+      if (!hasProfile) {
+        // New user, show stepper for additional info
         setUserId(user.uid)
         setUserEmail(user.email || "")
         setUserName(user.displayName || "")
         setShowStepper(true)
         setLoading(false)
+      } else {
+        // Existing user, redirect immediately
+        router.push("/")
       }
     } catch (err: any) {
       setError(err.message || "Google authentication failed")
@@ -150,36 +187,71 @@ export default function AuthPage() {
     }
   }
 
+  const validateStep = (step: number) => {
+    switch (step) {
+      case 1:
+        return true // Welcome step, no validation needed
+      case 2:
+        return userCollege.trim().length > 0
+      case 3:
+        return userBio.trim().length > 0
+      case 4:
+        return true // Final step, no validation needed
+      default:
+        return true
+    }
+  }
+
   const handleStepperComplete = async () => {
     console.log("Stepper complete triggered!")
+    console.log("User data:", { userId, userEmail, userName, userCollege, userBio })
+    
+    // Validate all required fields before saving
+    if (!userCollege.trim() || !userBio.trim()) {
+      setError("Please complete all required fields")
+      console.error("Validation failed")
+      return
+    }
+    
     setLoading(true)
     
     try {
-      // Save user data to Firestore
+      // Save user data to Firestore with validation
+      console.log("Saving profile to Firestore...")
       await setDoc(doc(db, "users", userId), {
-        name: userName,
+        name: userName || "Anonymous",
         email: userEmail,
-        college: userCollege,
-        bio: userBio,
+        college: userCollege.trim(),
+        bio: userBio.trim(),
         joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         stats: {
           daresCompleted: 0,
           rank: 0,
           points: 0,
           streak: 0
-        }
+        },
+        profileCompleted: true
       })
-      console.log("Profile saved successfully")
+      console.log("Profile saved successfully, redirecting...")
+      
+      // Redirect immediately after successful save
+      router.push("/")
     } catch (err: any) {
       console.error("Error saving profile:", err)
-      // Continue to redirect even if save fails (data can be saved later)
-    } finally {
-      setLoading(false)
-      console.log("Redirecting to dashboard...")
-      // Always redirect to dashboard after stepper completion
+      // Still redirect even if save fails
       router.push("/")
     }
+  }
+
+  // Show loading while checking auth status
+  if (isAuthChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-pastel-lavender/30 to-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (showStepper) {
@@ -191,6 +263,7 @@ export default function AuthPage() {
           backButtonText="Previous"
           nextButtonText="Next"
           stepCircleContainerClassName="border-slate-200"
+          validateStep={validateStep}
         >
           <Step>
             <div className="space-y-4">

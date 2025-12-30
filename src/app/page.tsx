@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FeatureCard } from "@/components/FeatureCard"
 import { StatBadge } from "@/components/StatBadge"
 import { HowItWorksStep } from "@/components/HowItWorksStep"
 import { SlideToAccept } from "@/components/SlideToAccept"
-import { auth } from "@/lib/firebase"
+import { auth, db } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
+import { doc, getDoc } from "firebase/firestore"
 import {
   Flame,
   Trophy,
@@ -27,14 +29,28 @@ import {
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
+      
+      // If user is logged in, check if they have completed their profile
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid))
+          if (!userDoc.exists()) {
+            // User is authenticated but hasn't completed profile, redirect to auth
+            router.push("/auth")
+          }
+        } catch (error) {
+          console.error("Error checking user profile:", error)
+        }
+      }
     })
 
     return () => unsubscribe()
-  }, [])
+  }, [router])
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white overflow-x-hidden pb-24">
       {/* Soft Background Elements */}

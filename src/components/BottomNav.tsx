@@ -2,14 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Zap, Trophy, User, Flame } from "lucide-react"
+import { Home, Zap, Trophy, User, Plus } from "lucide-react"
 import GlassSurface from "./GlassSurface"
 
 const navItems = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/dares", icon: Zap, label: "Dares" },
-  { href: "/daily", icon: Flame, label: "Daily" },
-  { href: "/leaderboard", icon: Trophy, label: "Leaderboard" },
+  { href: "/create-dare", icon: Plus, label: "Create" },
+  { href: "/leaderboard", icon: Trophy, label: "Board" },
   { href: "/profile", icon: User, label: "Profile" },
 ]
 

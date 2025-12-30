@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import { 
   Zap, 
   Trophy, 
@@ -20,6 +21,20 @@ import {
 } from "lucide-react"
 
 export default function DaresPage() {
+  const { user, loading, hasProfile } = useAuth(true, true)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!user || !hasProfile) {
+    return null
+  }
+
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
 

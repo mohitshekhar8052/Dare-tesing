@@ -1,14 +1,29 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useAuth } from "@/hooks/useAuth"
 import { Star, Zap, Flame, Timer, Coins, Users, TrendingUp, Calendar, Award, Target, Trophy } from "lucide-react"
 
 export default function DailyDarePage() {
+  const { user, loading, hasProfile } = useAuth(true, true)
+
   const [timeLeft, setTimeLeft] = useState({
     hours: 18,
     minutes: 32,
     seconds: 45
   })
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!user || !hasProfile) {
+    return null
+  }
 
   // Countdown timer
   useEffect(() => {
