@@ -12,6 +12,7 @@ import {
 } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import { Flame, Mail, Lock, User, Eye, EyeOff, Zap, Trophy, Star, Crown, Target, Users, TrendingUp, Sparkles, ArrowRight, Check, ArrowLeft, Home, GraduationCap } from "lucide-react"
+import Stepper, { Step } from "@/components/Stepper"
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -23,6 +24,12 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [activeFeature, setActiveFeature] = useState(0)
+  const [showStepper, setShowStepper] = useState(false)
+  const [userId, setUserId] = useState("")
+  const [userEmail, setUserEmail] = useState("")
+  const [userName, setUserName] = useState("")
+  const [userCollege, setUserCollege] = useState("")
+  const [userBio, setUserBio] = useState("Dare enthusiast | Challenge seeker | Always up for an adventure 🔥")
   const router = useRouter()
 
   const features = [
@@ -115,32 +122,128 @@ export default function AuthPage() {
       const user = userCredential.user
 
       // Check if user document exists
-      const userDoc = await getDoc(doc(db, "users", user.uid))
-      
-      // If new user, create profile
-      if (!userDoc.exists()) {
-        await setDoc(doc(db, "users", user.uid), {
-          name: user.displayName || "User",
-          email: user.email || "",
-          college: "",
-          joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-          bio: "Dare enthusiast | Challenge seeker | Always up for an adventure 🔥",
-          createdAt: new Date().toISOString(),
-          stats: {
-            daresCompleted: 0,
-            rank: 0,
-            points: 0,
-            streak: 0
-          }
-        })
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid))
+        
+        // If new user, show stepper for additional info
+        if (!userDoc.exists()) {
+          setUserId(user.uid)
+          setUserEmail(user.email || "")
+          setUserName(user.displayName || "")
+          setShowStepper(true)
+          setLoading(false)
+        } else {
+          router.push("/")
+        }
+      } catch (firestoreErr: any) {
+        // If offline or Firestore error, assume new user and show stepper
+        console.error("Firestore error:", firestoreErr)
+        setUserId(user.uid)
+        setUserEmail(user.email || "")
+        setUserName(user.displayName || "")
+        setShowStepper(true)
+        setLoading(false)
       }
-
-      router.push("/")
     } catch (err: any) {
       setError(err.message || "Google authentication failed")
-    } finally {
       setLoading(false)
     }
+  }
+
+  const handleStepperComplete = async () => {
+    console.log("Stepper complete triggered!")
+    setLoading(true)
+    
+    try {
+      // Save user data to Firestore
+      await setDoc(doc(db, "users", userId), {
+        name: userName,
+        email: userEmail,
+        college: userCollege,
+        bio: userBio,
+        joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        createdAt: new Date().toISOString(),
+        stats: {
+          daresCompleted: 0,
+          rank: 0,
+          points: 0,
+          streak: 0
+        }
+      })
+      console.log("Profile saved successfully")
+    } catch (err: any) {
+      console.error("Error saving profile:", err)
+      // Continue to redirect even if save fails (data can be saved later)
+    } finally {
+      setLoading(false)
+      console.log("Redirecting to dashboard...")
+      // Always redirect to dashboard after stepper completion
+      router.push("/")
+    }
+  }
+
+  if (showStepper) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white via-pastel-lavender/30 to-white flex items-center justify-center p-4">
+        <Stepper
+          initialStep={1}
+          onFinalStepCompleted={handleStepperComplete}
+          backButtonText="Previous"
+          nextButtonText="Next"
+          stepCircleContainerClassName="border-slate-200"
+        >
+          <Step>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-slate-800">Welcome to DARE! 🔥</h2>
+              <p className="text-slate-600">Let's set up your profile in just a few quick steps.</p>
+              <div className="pt-4">
+                <div className="flex items-center gap-2 text-sm text-slate-500">
+                  <User className="w-4 h-4" />
+                  <span>Signed in as {userName}</span>
+                </div>
+              </div>
+            </div>
+          </Step>
+          <Step>
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-slate-800">What's your college? 🎓</h2>
+              <p className="text-sm text-slate-600">Connect with fellow dare-takers from your institution</p>
+              <input
+                type="text"
+                value={userCollege}
+                onChange={(e) => setUserCollege(e.target.value)}
+                placeholder="Enter your college name"
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              />
+            </div>
+          </Step>
+          <Step>
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-slate-800">Tell us about yourself ✨</h2>
+              <p className="text-sm text-slate-600">Write a short bio to let others know who you are</p>
+              <textarea
+                value={userBio}
+                onChange={(e) => setUserBio(e.target.value)}
+                placeholder="Your bio..."
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
+              />
+            </div>
+          </Step>
+          <Step>
+            <div className="space-y-4 text-center">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
+                  <Check className="w-8 h-8 text-white" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">You're all set! 🎉</h2>
+              <p className="text-slate-600">Ready to take on some epic dares?</p>
+            </div>
+          </Step>
+        </Stepper>
+      </div>
+    )
   }
 
   return (

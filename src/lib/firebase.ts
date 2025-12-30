@@ -1,16 +1,38 @@
-import { initializeApp, getApps } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app'
+import { getAnalytics } from 'firebase/analytics'
+import { getAuth, Auth } from 'firebase/auth'
+import { getFirestore, Firestore } from 'firebase/firestore'
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || ''
+  apiKey: "AIzaSyABXx6NtGqqsj-CfSVddIsGDKj1rc6CrnA",
+  authDomain: "dareup-d3756.firebaseapp.com",
+  projectId: "dareup-d3756",
+  storageBucket: "dareup-d3756.firebasestorage.app",
+  messagingSenderId: "205880537186",
+  appId: "1:205880537186:web:f16e518b74d86573b2e13b",
+  measurementId: "G-TEJQM8Z0HX"
 }
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : undefined
-export const auth = getAuth(app as any)
-export const db = getFirestore(app as any)
+// Initialize Firebase app
+let app: FirebaseApp
+if (!getApps().length) {
+  app = initializeApp(firebaseConfig)
+} else {
+  app = getApp()
+}
+
+// Initialize services
+export const auth: Auth = getAuth(app)
+export const db: Firestore = getFirestore(app)
+
+let analytics: any = null
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app as any)
+  } catch (e) {
+    // Analytics can fail to initialize on non-browser or in restricted environments
+    analytics = null
+  }
+}
+
+export { analytics }
