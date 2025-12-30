@@ -1,21 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { NavLink } from "./NavLink";
-import { Menu, X, Flame } from "lucide-react";
+import { Menu, X, Flame, User, LogOut, UserCircle, ChevronDown } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const { user, userData } = useUser();
+  const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const firstName = userData?.name.split(" ")[0] || "User";
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setShowDropdown(false);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/dares", label: "Dares" },
-    { href: "/leaderboard", label: "Leaderboard" },
     { href: "/about", label: "About" },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-white/80 border-b border-slate-200/50 shadow-[0_4px_24px_rgba(0,0,0,0.06)]" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/40 border-b border-white/20" style={{ WebkitBackdropFilter: 'blur(8px)' }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
@@ -40,12 +69,49 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-            <NavLink
-              href="/auth"
-              className="ml-4 px-5 py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-white font-semibold text-sm hover:shadow-lg hover:scale-105 transition-all"
-            >
-              Sign In
-            </NavLink>
+            {user ? (
+              <div className="relative ml-4" ref={dropdownRef}>
+                <button
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="px-5 py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-white font-semibold text-sm hover:shadow-lg hover:scale-105 transition-all flex items-center gap-2"
+                >
+                  <User className="w-4 h-4" />
+                  {firstName}
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showDropdown && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
+                    <button
+                      onClick={() => {
+                        setShowDropdown(false);
+                        router.push('/profile');
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-slate-700 hover:bg-primary/5 hover:text-primary transition-colors flex items-center gap-3"
+                    >
+                      <UserCircle className="w-4 h-4" />
+                      <span className="font-medium">My Profile</span>
+                    </button>
+                    <div className="border-t border-slate-200 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full px-4 py-2.5 text-left text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span className="font-medium">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <NavLink
+                href="/auth"
+                className="ml-4 px-5 py-2 rounded-full bg-gradient-to-r from-primary to-secondary text-white font-semibold text-sm hover:shadow-lg hover:scale-105 transition-all"
+              >
+                Sign In
+              </NavLink>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -62,7 +128,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden backdrop-blur-xl bg-white/95 border-t border-slate-200/50" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+        <div className="md:hidden backdrop-blur-md bg-white/60 border-t border-white/20" style={{ WebkitBackdropFilter: 'blur(8px)' }}>
           <div className="px-4 pt-2 pb-3 space-y-1">
             {navItems.map((item) => (
               <NavLink
@@ -75,13 +141,37 @@ export default function Navbar() {
                 {item.label}
               </NavLink>
             ))}
-            <NavLink
-              href="/auth"
-              className="block px-4 py-3 mt-2 text-center rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-semibold"
-              onClick={() => setIsOpen(false)}
-            >
-              Sign In
-            </NavLink>
+            {user ? (
+              <>
+                <NavLink
+                  href="/profile"
+                  className="flex items-center gap-2 px-4 py-3 text-slate-600 hover:text-primary hover:bg-primary/5 rounded-lg transition-all font-medium"
+                  activeClassName="bg-primary/10 text-primary font-semibold"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <UserCircle className="w-4 h-4" />
+                  {firstName}'s Profile
+                </NavLink>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 mt-2 text-center rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <NavLink
+                href="/auth"
+                className="block px-4 py-3 mt-2 text-center rounded-lg bg-gradient-to-r from-primary to-secondary text-white font-semibold"
+                onClick={() => setIsOpen(false)}
+              >
+                Sign In
+              </NavLink>
+            )}
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "next/navigation"
+import { useUser } from "@/contexts/UserContext"
 import { Trophy, Medal, Flame, Coins, TrendingUp, Crown, Star, Zap } from "lucide-react"
 
 interface LeaderboardUser {
@@ -15,9 +16,15 @@ interface LeaderboardUser {
 }
 
 export default function LeaderboardPage() {
-  const { user, loading, hasProfile } = useAuth(true, true)
-
+  const router = useRouter()
+  const { user, loading } = useUser()
   const [timeframe, setTimeframe] = useState<"today" | "week" | "month" | "all">("week")
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth')
+    }
+  }, [loading, user, router])
 
   if (loading) {
     return (
@@ -27,7 +34,7 @@ export default function LeaderboardPage() {
     )
   }
 
-  if (!user || !hasProfile) {
+  if (!user) {
     return null
   }
 
@@ -252,7 +259,7 @@ export default function LeaderboardPage() {
                       <Star className="w-5 h-5" />
                       {user.score.toLocaleString()}
                     </div>
-                    <div className="text-xs text-muted-foreground">points</div>
+                    <div className="text-xs text-muted-foreground">coins</div>
                   </div>
                 </div>
               </div>
@@ -275,7 +282,7 @@ export default function LeaderboardPage() {
               <Coins className="w-6 h-6 text-secondary" />
             </div>
             <div className="text-2xl font-bold text-foreground mb-1">500K+</div>
-            <div className="text-sm text-muted-foreground">Total Points Earned</div>
+            <div className="text-sm text-muted-foreground">Total Coins Earned</div>
           </div>
 
           <div className="soft-card p-6 text-center">

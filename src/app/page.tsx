@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FeatureCard } from "@/components/FeatureCard"
 import { StatBadge } from "@/components/StatBadge"
 import { HowItWorksStep } from "@/components/HowItWorksStep"
 import { SlideToAccept } from "@/components/SlideToAccept"
-import { auth, db } from "@/lib/firebase"
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
+import { auth } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { doc, getDoc } from "firebase/firestore"
 import {
   Flame,
   Trophy,
@@ -29,28 +28,20 @@ import {
 
 export default function Home() {
   const [user, setUser] = useState<any>(null)
-  const router = useRouter()
+  
+  // Scroll animation hooks for different sections
+  const loginSection = useScrollAnimation({ threshold: 0.2 })
+  const featuresGrid = useScrollAnimation({ threshold: 0.15 })
+  const daresCarousel = useScrollAnimation({ threshold: 0.1 })
+  const dareOfDay = useScrollAnimation({ threshold: 0.2 })
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
-      
-      // If user is logged in, check if they have completed their profile
-      if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid))
-          if (!userDoc.exists()) {
-            // User is authenticated but hasn't completed profile, redirect to auth
-            router.push("/auth")
-          }
-        } catch (error) {
-          console.error("Error checking user profile:", error)
-        }
-      }
     })
 
     return () => unsubscribe()
-  }, [router])
+  }, [])
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-white overflow-x-hidden pb-24">
       {/* Soft Background Elements */}
@@ -61,7 +52,7 @@ export default function Home() {
       </div>
 
       {/* Hero Section */}
-      <section className="relative px-4 sm:px-6 overflow-hidden min-h-[calc(100vh-6rem)] flex items-center py-12">
+      <section className="relative px-4 sm:px-6 overflow-hidden min-h-screen flex items-center py-12 pt-24">
         {/* Background Video */}
         <video 
           src="/assets/hero-characters.mp4"
@@ -166,21 +157,32 @@ export default function Home() {
       </section>
 
       {/* Login Section */}
-      <section className="relative z-10 px-6 py-24 bg-gradient-to-b from-muted/20 to-background">
+      <section 
+        ref={loginSection.ref}
+        className={`relative z-10 px-6 py-24 bg-gradient-to-b from-muted/20 to-background scroll-animate ${
+          loginSection.isVisible ? 'slide-in-up' : ''
+        }`}
+      >
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-bounce-gentle">
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 scroll-animate ${
+            loginSection.isVisible ? 'scale-in-center' : ''
+          }`} style={{ animationDelay: '0.2s' }}>
             <Star className="w-5 h-5 text-primary animate-spin-slow" />
             <span className="text-sm font-bold text-primary">START YOUR JOURNEY</span>
           </div>
           
-          <h2 className="font-display text-4xl md:text-5xl text-foreground mb-6 font-extrabold">
+          <h2 className={`font-display text-4xl md:text-5xl text-foreground mb-6 font-extrabold scroll-animate ${
+            loginSection.isVisible ? 'slide-in-left' : ''
+          }`} style={{ animationDelay: '0.3s' }}>
             Ready to Accept the{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-pastel-coral">
               Challenge?
             </span>
           </h2>
           
-          <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-2xl mx-auto">
+          <p className={`text-lg text-muted-foreground mb-8 leading-relaxed max-w-2xl mx-auto scroll-animate ${
+            loginSection.isVisible ? 'slide-in-right' : ''
+          }`} style={{ animationDelay: '0.4s' }}>
             Join thousands of dare legends. Sign in to start completing challenges, 
             earning coins, and climbing the leaderboards!
           </p>
@@ -188,14 +190,23 @@ export default function Home() {
           {/* CTA Button */}
           {user ? (
             <Link href="/dashboard">
-              <Button variant="hero" size="xl" className="group animate-pulse-slow">
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className={`group animate-pulse-slow scroll-animate ${
+                  loginSection.isVisible ? 'zoom-in' : ''
+                }`}
+                style={{ animationDelay: '0.5s' }}
+              >
                 <Trophy className="w-5 h-5 group-hover:animate-bounce" />
                 Go to Dashboard
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </Link>
           ) : (
-            <div className="relative inline-flex">
+            <div className={`relative inline-flex scroll-animate ${
+              loginSection.isVisible ? 'zoom-in' : ''
+            }`} style={{ animationDelay: '0.5s' }}>
               <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-pastel-coral rounded-full blur-lg opacity-75 animate-pulse" />
               <Link href="/auth" className="relative z-10">
                 <button className="inline-flex items-center gap-3 px-8 py-4 text-lg font-extrabold text-white bg-gradient-to-r from-primary via-secondary to-primary hover:from-primary/90 hover:via-secondary/90 hover:to-primary/90 rounded-full shadow-2xl hover:shadow-primary/50 transition-all duration-300 hover:scale-105 border-2 border-white/20 hover:border-white/40">
@@ -208,8 +219,13 @@ export default function Home() {
           )}
 
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
-            <div className="soft-card p-6 text-center animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
+          <div 
+            ref={featuresGrid.ref}
+            className="grid md:grid-cols-3 gap-6 mt-12"
+          >
+            <div className={`soft-card p-6 text-center scroll-animate ${
+              featuresGrid.isVisible ? 'slide-in-left' : ''
+            }`} style={{ animationDelay: '0.1s' }}>
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
@@ -217,7 +233,9 @@ export default function Home() {
               <p className="text-sm text-muted-foreground">Complete dares and prove yourself</p>
             </div>
             
-            <div className="soft-card p-6 text-center animate-fade-in" style={{ animationDelay: '0.2s', animationFillMode: 'forwards' }}>
+            <div className={`soft-card p-6 text-center scroll-animate ${
+              featuresGrid.isVisible ? 'scale-in-center' : ''
+            }`} style={{ animationDelay: '0.3s' }}>
               <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
                 <Coins className="w-6 h-6 text-secondary" />
               </div>
@@ -225,7 +243,9 @@ export default function Home() {
               <p className="text-sm text-muted-foreground">Collect coins and unlock badges</p>
             </div>
             
-            <div className="soft-card p-6 text-center animate-fade-in" style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
+            <div className={`soft-card p-6 text-center scroll-animate ${
+              featuresGrid.isVisible ? 'slide-in-right' : ''
+            }`} style={{ animationDelay: '0.5s' }}>
               <div className="w-12 h-12 rounded-full bg-pastel-coral/10 flex items-center justify-center mx-auto mb-4">
                 <Trophy className="w-6 h-6 text-pastel-coral" />
               </div>
@@ -237,8 +257,15 @@ export default function Home() {
       </section>
 
       {/* Dare Cards Carousel */}
-      <section className="relative z-10 py-20 overflow-hidden bg-gradient-to-b from-background to-muted/20">
-        <div className="max-w-7xl mx-auto px-6 mb-12">
+      <section 
+        ref={daresCarousel.ref}
+        className={`relative z-10 py-20 overflow-hidden bg-gradient-to-b from-background to-muted/20 scroll-animate ${
+          daresCarousel.isVisible ? 'slide-in-up' : ''
+        }`}
+      >
+        <div className={`max-w-7xl mx-auto px-6 mb-12 scroll-animate ${
+          daresCarousel.isVisible ? 'slide-in-down' : ''
+        }`} style={{ animationDelay: '0.2s' }}>
           <div className="text-center">
             <h2 className="font-display text-3xl md:text-4xl text-foreground mb-4 font-extrabold">
               Today's <span className="text-primary">Hot Dares</span>
@@ -416,24 +443,37 @@ export default function Home() {
       </section>
 
       {/* Dare of the Day */}
-      <section className="relative z-10 px-6 py-24 overflow-hidden">
+      <section 
+        ref={dareOfDay.ref}
+        className={`relative z-10 px-6 py-24 overflow-hidden scroll-animate ${
+          dareOfDay.isVisible ? 'slide-in-up' : ''
+        }`}
+      >
         <div className="max-w-5xl mx-auto">
           {/* Section Title */}
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 animate-bounce-gentle">
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-4 scroll-animate ${
+              dareOfDay.isVisible ? 'rotate-in' : ''
+            }`} style={{ animationDelay: '0.1s' }}>
               <Star className="w-5 h-5 text-primary animate-spin-slow" />
               <span className="text-sm font-bold text-primary">FEATURED</span>
             </div>
-            <h2 className="font-display text-4xl md:text-5xl text-foreground mb-4 font-extrabold animate-fade-in">
+            <h2 className={`font-display text-4xl md:text-5xl text-foreground mb-4 font-extrabold scroll-animate ${
+              dareOfDay.isVisible ? 'scale-in-center' : ''
+            }`} style={{ animationDelay: '0.2s' }}>
               Dare of the <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-secondary to-pastel-coral animate-gradient-shift">Day</span>
             </h2>
-            <p className="text-muted-foreground text-lg">
+            <p className={`text-muted-foreground text-lg scroll-animate ${
+              dareOfDay.isVisible ? 'slide-in-up' : ''
+            }`} style={{ animationDelay: '0.3s' }}>
               The ultimate challenge awaits. Are you brave enough?
             </p>
           </div>
 
           {/* Main Dare Card */}
-          <div className="relative">
+          <div className={`relative scroll-animate ${
+            dareOfDay.isVisible ? 'zoom-in' : ''
+          }`} style={{ animationDelay: '0.4s' }}>
             {/* Animated Background Rings */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="w-64 h-64 border-4 border-primary/20 rounded-full animate-ping-slow" />
@@ -442,7 +482,7 @@ export default function Home() {
             </div>
 
             {/* Central Card */}
-            <div className="relative soft-card p-8 md:p-12 shadow-2xl border-2 border-primary/30 animate-float-slow hover:scale-105 transition-all duration-500">
+            <div className="relative soft-card p-8 md:p-12 shadow-2xl border-2 border-primary/30 hover:scale-105 transition-all duration-500">
               {/* Sparkle Effects */}
               <div className="absolute -top-4 -right-4 w-8 h-8 bg-primary rounded-full blur-md animate-pulse" />
               <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-secondary rounded-full blur-md animate-pulse" style={{ animationDelay: '0.5s' }} />

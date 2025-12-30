@@ -26,7 +26,7 @@ export default function CreateDarePage() {
     description: "",
     category: "fun",
     difficulty: "easy",
-    points: 50,
+    coins: 50,
     timeLimit: "24h",
     requirements: ""
   })
@@ -43,10 +43,10 @@ export default function CreateDarePage() {
   ]
 
   const difficulties = [
-    { id: "easy", name: "Easy", points: 50, color: "text-green-600 bg-green-50" },
-    { id: "medium", name: "Medium", points: 150, color: "text-yellow-600 bg-yellow-50" },
-    { id: "hard", name: "Hard", points: 300, color: "text-orange-600 bg-orange-50" },
-    { id: "extreme", name: "Extreme", points: 500, color: "text-red-600 bg-red-50" }
+    { id: "easy", name: "Easy", coins: 50, color: "text-green-600 bg-green-50" },
+    { id: "medium", name: "Medium", coins: 150, color: "text-yellow-600 bg-yellow-50" },
+    { id: "hard", name: "Hard", coins: 300, color: "text-orange-600 bg-orange-50" },
+    { id: "extreme", name: "Extreme", coins: 500, color: "text-red-600 bg-red-50" }
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -92,7 +92,7 @@ export default function CreateDarePage() {
     setFormData({
       ...formData,
       difficulty: difficultyId,
-      points: difficulty?.points || 50
+      coins: difficulty?.coins || 50
     })
   }
 
@@ -235,7 +235,7 @@ export default function CreateDarePage() {
                   }`}
                 >
                   <p className="text-sm font-semibold text-slate-900 mb-1">{difficulty.name}</p>
-                  <p className="text-xs text-slate-600">{difficulty.points} pts</p>
+                  <p className="text-xs text-slate-600">{difficulty.coins} coins</p>
                 </button>
               ))}
             </div>

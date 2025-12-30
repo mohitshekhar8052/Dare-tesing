@@ -5,13 +5,13 @@ import { getFirestore, Firestore } from 'firebase/firestore'
 import { getStorage, FirebaseStorage } from 'firebase/storage'
 
 const firebaseConfig = {
-  apiKey: "AIzaSyABXx6NtGqqsj-CfSVddIsGDKj1rc6CrnA",
-  authDomain: "dareup-d3756.firebaseapp.com",
-  projectId: "dareup-d3756",
-  storageBucket: "dareup-d3756.firebasestorage.app",
-  messagingSenderId: "205880537186",
-  appId: "1:205880537186:web:f16e518b74d86573b2e13b",
-  measurementId: "G-TEJQM8Z0HX"
+  apiKey: "AIzaSyB7M5fMm_ylKvs1R8mHP6QE3RtGqkIL9rk",
+  authDomain: "dareup-29f62.firebaseapp.com",
+  projectId: "dareup-29f62",
+  storageBucket: "dareup-29f62.firebasestorage.app",
+  messagingSenderId: "226096221232",
+  appId: "1:226096221232:web:e2334fd1d91c10a0bb71f5",
+  measurementId: "G-1PVRVB3T5F"
 }
 
 // Initialize Firebase app

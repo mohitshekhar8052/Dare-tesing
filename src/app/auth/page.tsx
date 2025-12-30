@@ -7,13 +7,14 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   updateProfile,
   onAuthStateChanged
 } from "firebase/auth"
 import { doc, setDoc, getDoc } from "firebase/firestore"
 import { Flame, Mail, Lock, User, Eye, EyeOff, Zap, Trophy, Star, Crown, Target, Users, TrendingUp, Sparkles, ArrowRight, Check, ArrowLeft, Home, GraduationCap } from "lucide-react"
-import Stepper, { Step } from "@/components/Stepper"
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true)
@@ -25,12 +26,6 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [activeFeature, setActiveFeature] = useState(0)
-  const [showStepper, setShowStepper] = useState(false)
-  const [userId, setUserId] = useState("")
-  const [userEmail, setUserEmail] = useState("")
-  const [userName, setUserName] = useState("")
-  const [userCollege, setUserCollege] = useState("")
-  const [userBio, setUserBio] = useState("Dare enthusiast | Challenge seeker | Always up for an adventure 🔥")
   const [isAuthChecking, setIsAuthChecking] = useState(true)
   const router = useRouter()
 
@@ -38,26 +33,69 @@ export default function AuthPage() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid))
-          if (userDoc.exists()) {
-            // User is authenticated and has a profile, redirect to home
-            router.push("/")
-          } else {
-            // User is authenticated but doesn't have profile, show stepper
-            setUserId(currentUser.uid)
-            setUserEmail(currentUser.email || "")
-            setUserName(currentUser.displayName || "")
-            setShowStepper(true)
-          }
-        } catch (error) {
-          console.error("Error checking user profile:", error)
-        }
+        // User is authenticated, redirect to home
+        router.push("/")
       }
       setIsAuthChecking(false)
     })
 
     return () => unsubscribe()
+  }, [router])
+
+  // Handle redirect result from Google sign-in
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth)
+        if (result) {
+          const user = result.user
+          
+          // Check if user document exists
+          const userDocRef = doc(db, "users", user.uid)
+          const userDoc = await getDoc(userDocRef)
+          
+          if (!userDoc.exists()) {
+            // New user, create profile with basic info
+            await setDoc(userDocRef, {
+              name: user.displayName || "Anonymous",
+              email: user.email || "",
+              college: "",
+              bio: "",
+              joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              stats: {
+                daresCompleted: 0,
+                rank: 0,
+                coins: 0,
+                streak: 0
+              },
+              onboardingCompleted: false
+            })
+            
+            // Verify the document was created
+            const verifyDoc = await getDoc(userDocRef)
+            if (!verifyDoc.exists()) {
+              throw new Error("Failed to create user profile")
+            }
+            console.log("Redirect profile created successfully:", verifyDoc.data())
+            
+            // Redirect to onboarding for new users
+            router.push("/onboarding")
+          } else {
+            // Existing user, redirect to home
+            router.push("/")
+          }
+        }
+      } catch (err: any) {
+        console.error("Redirect result error:", err)
+        if (err.code !== 'auth/popup-closed-by-user') {
+          setError(err.message || "Google authentication failed")
+        }
+      }
+    }
+    
+    handleRedirectResult()
   }, [router])
 
   const features = [
@@ -108,6 +146,7 @@ export default function AuthPage() {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password)
+        router.push("/")
       } else {
         // Create user account
         const userCredential = await createUserWithEmailAndPassword(auth, email, password)
@@ -117,23 +156,35 @@ export default function AuthPage() {
         await updateProfile(user, { displayName: name })
 
         // Save user data to Firestore
-        await setDoc(doc(db, "users", user.uid), {
+        const userDocRef = doc(db, "users", user.uid)
+        await setDoc(userDocRef, {
           name: name,
           email: email,
           college: college,
           joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
           bio: "Dare enthusiast | Challenge seeker | Always up for an adventure 🔥",
           createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
           stats: {
             daresCompleted: 0,
             rank: 0,
-            points: 0,
+            coins: 0,
             streak: 0
-          }
+          },
+          profileCompleted: true
         })
+        
+        // Verify the document was created
+        const verifyDoc = await getDoc(userDocRef)
+        if (verifyDoc.exists()) {
+          console.log("Profile created successfully:", verifyDoc.data())
+          router.push("/")
+        } else {
+          throw new Error("Failed to create user profile")
+        }
       }
-      router.push("/")
     } catch (err: any) {
+      console.error("Auth error:", err)
       setError(err.message || "Authentication failed")
     } finally {
       setLoading(false)
@@ -146,102 +197,66 @@ export default function AuthPage() {
     
     try {
       const provider = new GoogleAuthProvider()
-      const userCredential = await signInWithPopup(auth, provider)
-      const user = userCredential.user
+      
+      try {
+        // Try popup first
+        const userCredential = await signInWithPopup(auth, provider)
+        const user = userCredential.user
 
-      // Quick check if user document exists with timeout
-      const checkUserProfile = async () => {
-        try {
-          const userDocRef = doc(db, "users", user.uid)
-          const userDoc = await Promise.race([
-            getDoc(userDocRef),
-            new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('timeout')), 3000)
-            )
-          ]) as any
+        // Check if user document exists
+        const userDocRef = doc(db, "users", user.uid)
+        const userDoc = await getDoc(userDocRef)
+        
+        if (!userDoc.exists()) {
+          // New user, create basic profile
+          await setDoc(userDocRef, {
+            name: user.displayName || "Anonymous",
+            email: user.email || "",
+            college: "",
+            bio: "",
+            joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            stats: {
+              daresCompleted: 0,
+              rank: 0,
+              coins: 0,
+              streak: 0
+            },
+            onboardingCompleted: false
+          })
           
-          return userDoc.exists()
-        } catch (error) {
-          // If timeout or error, assume new user
-          console.log("Profile check timeout/error, treating as new user")
-          return false
+          // Verify the document was created
+          const verifyDoc = await getDoc(userDocRef)
+          if (!verifyDoc.exists()) {
+            throw new Error("Failed to create user profile")
+          }
+          console.log("Google profile created successfully:", verifyDoc.data())
+          
+          // Redirect to onboarding for new users
+          router.push("/onboarding")
+        } else {
+          // Existing user, redirect to home
+          router.push("/")
+        }
+      } catch (popupError: any) {
+        // If popup is blocked, fall back to redirect
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/cancelled-popup-request') {
+          console.log('Popup blocked, using redirect method')
+          await signInWithRedirect(auth, provider)
+          // The redirect result will be handled in the useEffect
+        } else if (popupError.code !== 'auth/popup-closed-by-user') {
+          throw popupError
         }
       }
-
-      const hasProfile = await checkUserProfile()
-      
-      if (!hasProfile) {
-        // New user, show stepper for additional info
-        setUserId(user.uid)
-        setUserEmail(user.email || "")
-        setUserName(user.displayName || "")
-        setShowStepper(true)
-        setLoading(false)
-      } else {
-        // Existing user, redirect immediately
-        router.push("/")
+    } catch (err: any) {
+      console.error("Google auth error:", err)
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setError(err.message || "Google authentication failed")
       }
-    } catch (err: any) {
-      setError(err.message || "Google authentication failed")
+    } finally {
       setLoading(false)
-    }
-  }
-
-  const validateStep = (step: number) => {
-    switch (step) {
-      case 1:
-        return true // Welcome step, no validation needed
-      case 2:
-        return userCollege.trim().length > 0
-      case 3:
-        return userBio.trim().length > 0
-      case 4:
-        return true // Final step, no validation needed
-      default:
-        return true
-    }
-  }
-
-  const handleStepperComplete = async () => {
-    console.log("Stepper complete triggered!")
-    console.log("User data:", { userId, userEmail, userName, userCollege, userBio })
-    
-    // Validate all required fields before saving
-    if (!userCollege.trim() || !userBio.trim()) {
-      setError("Please complete all required fields")
-      console.error("Validation failed")
-      return
-    }
-    
-    setLoading(true)
-    
-    try {
-      // Save user data to Firestore with validation
-      console.log("Saving profile to Firestore...")
-      await setDoc(doc(db, "users", userId), {
-        name: userName || "Anonymous",
-        email: userEmail,
-        college: userCollege.trim(),
-        bio: userBio.trim(),
-        joinDate: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        stats: {
-          daresCompleted: 0,
-          rank: 0,
-          points: 0,
-          streak: 0
-        },
-        profileCompleted: true
-      })
-      console.log("Profile saved successfully, redirecting...")
-      
-      // Redirect immediately after successful save
-      router.push("/")
-    } catch (err: any) {
-      console.error("Error saving profile:", err)
-      // Still redirect even if save fails
-      router.push("/")
     }
   }
 
@@ -250,71 +265,6 @@ export default function AuthPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white via-pastel-lavender/30 to-white">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  if (showStepper) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-pastel-lavender/30 to-white flex items-center justify-center p-4">
-        <Stepper
-          initialStep={1}
-          onFinalStepCompleted={handleStepperComplete}
-          backButtonText="Previous"
-          nextButtonText="Next"
-          stepCircleContainerClassName="border-slate-200"
-          validateStep={validateStep}
-        >
-          <Step>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold text-slate-800">Welcome to DARE! 🔥</h2>
-              <p className="text-slate-600">Let's set up your profile in just a few quick steps.</p>
-              <div className="pt-4">
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <User className="w-4 h-4" />
-                  <span>Signed in as {userName}</span>
-                </div>
-              </div>
-            </div>
-          </Step>
-          <Step>
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-800">What's your college? 🎓</h2>
-              <p className="text-sm text-slate-600">Connect with fellow dare-takers from your institution</p>
-              <input
-                type="text"
-                value={userCollege}
-                onChange={(e) => setUserCollege(e.target.value)}
-                placeholder="Enter your college name"
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-              />
-            </div>
-          </Step>
-          <Step>
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-slate-800">Tell us about yourself ✨</h2>
-              <p className="text-sm text-slate-600">Write a short bio to let others know who you are</p>
-              <textarea
-                value={userBio}
-                onChange={(e) => setUserBio(e.target.value)}
-                placeholder="Your bio..."
-                rows={4}
-                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-none"
-              />
-            </div>
-          </Step>
-          <Step>
-            <div className="space-y-4 text-center">
-              <div className="flex justify-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                  <Check className="w-8 h-8 text-white" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800">You're all set! 🎉</h2>
-              <p className="text-slate-600">Ready to take on some epic dares?</p>
-            </div>
-          </Step>
-        </Stepper>
       </div>
     )
   }

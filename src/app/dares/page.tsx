@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { useAuth } from "@/hooks/useAuth"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useUser } from "@/contexts/UserContext"
 import { 
   Zap, 
   Trophy, 
@@ -21,7 +22,16 @@ import {
 } from "lucide-react"
 
 export default function DaresPage() {
-  const { user, loading, hasProfile } = useAuth(true, true)
+  const router = useRouter()
+  const { user, loading } = useUser()
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/auth')
+    }
+  }, [loading, user, router])
 
   if (loading) {
     return (
@@ -31,12 +41,9 @@ export default function DaresPage() {
     )
   }
 
-  if (!user || !hasProfile) {
+  if (!user) {
     return null
   }
-
-  const [selectedCategory, setSelectedCategory] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
 
   const categories = [
     { id: "all", name: "All Dares", icon: Zap, color: "from-primary to-purple-600" },
@@ -53,7 +60,7 @@ export default function DaresPage() {
       description: "Dance for 30 seconds in a busy public area",
       category: "social",
       difficulty: "medium",
-      points: 150,
+      coins: 150,
       duration: "30 sec",
       participants: 1247,
       trending: true
@@ -64,7 +71,7 @@ export default function DaresPage() {
       description: "Start a conversation with 5 random people",
       category: "social",
       difficulty: "easy",
-      points: 120,
+      coins: 120,
       duration: "20 min",
       participants: 892,
       trending: false
@@ -75,7 +82,7 @@ export default function DaresPage() {
       description: "Perform a full song at a karaoke bar alone",
       category: "fun",
       difficulty: "hard",
-      points: 200,
+      coins: 200,
       duration: "5 min",
       participants: 654,
       trending: true
@@ -86,7 +93,7 @@ export default function DaresPage() {
       description: "Do something nice for a stranger and record it",
       category: "social",
       difficulty: "easy",
-      points: 100,
+      coins: 100,
       duration: "10 min",
       participants: 2103,
       trending: false
@@ -97,7 +104,7 @@ export default function DaresPage() {
       description: "Make temporary chalk art in a public space",
       category: "creative",
       difficulty: "medium",
-      points: 180,
+      coins: 180,
       duration: "30 min",
       participants: 456,
       trending: false
@@ -108,7 +115,7 @@ export default function DaresPage() {
       description: "Stay in ice-cold water for 2 minutes",
       category: "extreme",
       difficulty: "hard",
-      points: 250,
+      coins: 250,
       duration: "2 min",
       participants: 789,
       trending: true
@@ -119,7 +126,7 @@ export default function DaresPage() {
       description: "Give genuine compliments to 10 strangers",
       category: "social",
       difficulty: "easy",
-      points: 80,
+      coins: 80,
       duration: "15 min",
       participants: 1456,
       trending: false
@@ -130,7 +137,7 @@ export default function DaresPage() {
       description: "Join or create a flash mob performance",
       category: "fun",
       difficulty: "hard",
-      points: 300,
+      coins: 300,
       duration: "10 min",
       participants: 321,
       trending: true
@@ -141,7 +148,7 @@ export default function DaresPage() {
       description: "Perform an original poem in front of an audience",
       category: "creative",
       difficulty: "medium",
-      points: 170,
+      coins: 170,
       duration: "3 min",
       participants: 567,
       trending: false
@@ -152,7 +159,7 @@ export default function DaresPage() {
       description: "Exchange contact info with 100 new people in a day",
       category: "social",
       difficulty: "extreme",
-      points: 500,
+      coins: 500,
       duration: "8 hours",
       participants: 123,
       trending: false
@@ -163,7 +170,7 @@ export default function DaresPage() {
       description: "Perform a 3-minute stand-up comedy routine",
       category: "fun",
       difficulty: "hard",
-      points: 220,
+      coins: 220,
       duration: "3 min",
       participants: 445,
       trending: true
@@ -174,7 +181,7 @@ export default function DaresPage() {
       description: "Take creative photos with 20 strangers",
       category: "creative",
       difficulty: "medium",
-      points: 140,
+      coins: 140,
       duration: "1 hour",
       participants: 678,
       trending: false
@@ -362,13 +369,13 @@ export default function DaresPage() {
                         </div>
                       </div>
 
-                      {/* Points & Action */}
+                      {/* Coins & Action */}
                       <div className="flex items-center justify-between pt-6 border-t-2 border-slate-200">
                         <div className="flex items-center gap-3">
                           <Trophy className="w-6 h-6 text-primary animate-float" />
                           <div>
-                            <span className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{dare.points}</span>
-                            <span className="text-sm text-slate-600 font-medium ml-1">points</span>
+                            <span className="text-3xl font-black bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{dare.coins}</span>
+                            <span className="text-sm text-slate-600 font-medium ml-1">coins</span>
                           </div>
                         </div>
                         <button className="relative px-6 py-3 rounded-xl bg-gradient-to-r from-primary via-secondary to-primary bg-[length:200%_100%] text-white font-bold hover:shadow-2xl transition-all group-hover:scale-105 overflow-hidden animate-gradient-flow">
@@ -445,12 +452,12 @@ export default function DaresPage() {
                         </div>
                       </div>
 
-                      {/* Points & Action */}
+                      {/* Coins & Action */}
                       <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                         <div className="flex items-center gap-2">
                           <Trophy className="w-5 h-5 text-primary group-hover:animate-bounce-gentle" />
-                          <span className="text-2xl font-black text-primary">{dare.points}</span>
-                          <span className="text-xs text-slate-600 font-medium">pts</span>
+                          <span className="text-2xl font-black text-primary">{dare.coins}</span>
+                          <span className="text-xs text-slate-600 font-medium">coins</span>
                         </div>
                         <button className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-lg transition-all hover:gap-2 hover:scale-105">
                           Go
@@ -508,12 +515,12 @@ export default function DaresPage() {
                         </div>
                       </div>
 
-                      {/* Points & Action */}
+                      {/* Coins & Action */}
                       <div className="flex items-center justify-between pt-4 border-t border-slate-200">
                         <div className="flex items-center gap-2">
                           <Trophy className="w-5 h-5 text-primary group-hover:animate-bounce-gentle" />
-                          <span className="text-2xl font-black text-primary">{dare.points}</span>
-                          <span className="text-xs text-slate-600 font-medium">pts</span>
+                          <span className="text-2xl font-black text-primary">{dare.coins}</span>
+                          <span className="text-xs text-slate-600 font-medium">coins</span>
                         </div>
                         <button className="flex items-center gap-1 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-semibold hover:shadow-lg transition-all hover:gap-2 hover:scale-105">
                           Go

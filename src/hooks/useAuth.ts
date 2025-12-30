@@ -12,6 +12,9 @@ interface AuthState {
   hasProfile: boolean
 }
 
+// Cache to avoid repeated Firestore calls
+const profileCache = new Map<string, boolean>()
+
 export function useAuth(requireAuth = false, requireProfile = false) {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -31,10 +34,28 @@ export function useAuth(requireAuth = false, requireProfile = false) {
         return
       }
 
+      // Check cache first
+      const cached = profileCache.get(currentUser.uid)
+      if (cached !== undefined) {
+        setAuthState({
+          user: currentUser,
+          loading: false,
+          hasProfile: cached,
+        })
+
+        if (requireProfile && !cached) {
+          router.push('/auth')
+        }
+        return
+      }
+
       // Check if user has a profile in Firestore
       try {
         const userDoc = await getDoc(doc(db, 'users', currentUser.uid))
         const hasProfile = userDoc.exists()
+        
+        // Cache the result
+        profileCache.set(currentUser.uid, hasProfile)
 
         setAuthState({
           user: currentUser,
